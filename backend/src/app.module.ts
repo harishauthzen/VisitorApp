@@ -22,6 +22,7 @@ export const {
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: ['../.env.local', '.env'],
     }),
 
     TypeOrmModule.forRootAsync({
@@ -29,19 +30,24 @@ export const {
 
       inject: [ConfigService],
 
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
+      useFactory: (configService: ConfigService) => {
+        const databaseUrl = configService.get<string>('DATABASE_URL');
 
-        host: configService.get<string>('DB_HOST'),
-        port: configService.get<number>('DB_PORT'),
-        username: configService.get<string>('DB_USERNAME'),
-        password: configService.get<string>('DB_PASSWORD'),
-        database: configService.get<string>('DB_DATABASE'),
-
-        autoLoadEntities: true,
-
-        synchronize: true,
-      }),
+        return {
+          type: 'postgres',
+          ...(databaseUrl
+            ? { url: databaseUrl }
+            : {
+                host: configService.get<string>('DB_HOST'),
+                port: configService.get<number>('DB_PORT'),
+                username: configService.get<string>('DB_USERNAME'),
+                password: configService.get<string>('DB_PASSWORD'),
+                database: configService.get<string>('DB_DATABASE'),
+              }),
+          autoLoadEntities: true,
+          synchronize: true,
+        };
+      },
     }),
 
     ObserveModule.forRoot({

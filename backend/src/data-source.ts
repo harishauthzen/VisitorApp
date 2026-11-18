@@ -2,6 +2,7 @@ import 'reflect-metadata';
 
 import dotenv from 'dotenv';
 
+dotenv.config({ path: '../.env.local' });
 dotenv.config({ path: '.env.migration' });
 
 import { DataSource } from 'typeorm';
@@ -10,15 +11,21 @@ import { fileURLToPath } from 'node:url';
 
 const currentFile = fileURLToPath(import.meta.url);
 const currentDirectory = dirname(currentFile);
+const databaseUrl =
+  process.env.DATABASE_URL_UNPOOLED ?? process.env.DATABASE_URL;
 
 const AppDataSource = new DataSource({
   type: 'postgres',
 
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT ?? 5432),
-  username: process.env.DB_USERNAME,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_DATABASE,
+  ...(databaseUrl
+    ? { url: databaseUrl }
+    : {
+        host: process.env.DB_HOST,
+        port: Number(process.env.DB_PORT ?? 5432),
+        username: process.env.DB_USERNAME,
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_DATABASE,
+      }),
 
   // Load all entity files, not just the event entities.
   entities: [
